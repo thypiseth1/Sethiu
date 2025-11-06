@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crypto Airdrop</title>
+    
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;700&display=swap" rel="stylesheet">
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+
+    <style>
+        :root {
+            --bg-color: #0a0a1a;
+            --primary-color: #39FF14; /* Neon Green */
+            --secondary-color: #00f2ea; /* Cyan Accent */
+            --text-color: #f0f0f0;
+            --card-bg: rgba(20, 20, 40, 0.65);
+            --border-color: rgba(57, 255, 20, 0.2);
+            --shadow-color: rgba(57, 255, 20, 0.15);
+            --shadow-color-secondary: rgba(0, 242, 234, 0.15);
+        }
+        body { margin: 0; font-family: 'Chakra Petch', sans-serif; background: var(--bg-color); color: var(--text-color); overflow-x: hidden; min-height: 100vh; }
+        .bg-animation { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; background-color: #0a0a1a; overflow: hidden; }
+        .bg-animation::before, .bg-animation::after { content: ''; position: absolute; width: 150%; height: 150%; top: -25%; left: -25%; background-repeat: repeat; pointer-events: none; will-change: transform, opacity; }
+        .bg-animation::before { background-image: linear-gradient(0deg, transparent 95%, rgba(57, 255, 20, 0.08) 100%), linear-gradient(90deg, transparent 95%, rgba(57, 255, 20, 0.08) 100%), radial-gradient(circle at center, rgba(0, 242, 234, 0.05) 0%, transparent 70%); background-size: 80px 80px, 80px 80px, 150px 150px; animation: move-bg-1 20s linear infinite, fade-in 3s ease-out forwards; opacity: 0.8; }
+        .bg-animation::after { background-image: radial-gradient(circle at 20% 80%, rgba(57, 255, 20, 0.1) 0%, transparent 60%), radial-gradient(circle at 80% 20%, rgba(0, 242, 234, 0.1) 0%, transparent 60%), repeating-linear-gradient(45deg, rgba(57, 255, 20, 0.05) 0px, transparent 1px, transparent 15px, rgba(57, 255, 20, 0.05) 16px); background-size: 300px 300px, 300px 300px, 100px 100px; animation: move-bg-2 40s linear infinite reverse, rotate-bg 100s linear infinite, fade-in 3s ease-out forwards; opacity: 0.6; transform: scale(1.1) rotate(5deg); }
+        @keyframes move-bg-1 { from { transform: translate(0, 0) scale(1); } to { transform: translate(-50px, -50px) scale(1.05); } }
+        @keyframes move-bg-2 { from { transform: translate(0, 0) scale(1.1) rotate(5deg); } to { transform: translate(70px, 70px) scale(1.08) rotate(2deg); } }
+        @keyframes rotate-bg { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        @keyframes fade-in { from { opacity: 0; } to { opacity: var(--initial-opacity); } }
+        .App { padding: 20px; box-sizing: border-box; max-width: 500px; margin: 0 auto; position: relative; z-index: 1; }
+        .card { background: var(--card-bg); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-radius: 16px; border: 1px solid var(--border-color); padding: 24px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2), 0 0 20px var(--shadow-color), 0 0 30px var(--shadow-color-secondary); }
+        .header-card { text-align: center; } .header-card img { width: 80px; height: 80px; border-radius: 50%; border: 2px solid var(--primary-color); box-shadow: 0 0 20px var(--shadow-color); }
+        .header-card h1 { margin: 10px 0 5px 0; color: var(--primary-color); font-weight: 700; font-size: 2rem; text-shadow: 0 0 10px var(--shadow-color); }
+        .header-card p { font-size: 1rem; color: #b0b0c0; margin-bottom: 15px; }
+        .countdown-timer { display: flex; justify-content: center; gap: 10px; margin-top: 15px; }
+        .timer-box { background: rgba(0, 0, 0, 0.3); padding: 10px; border-radius: 8px; text-align: center; min-width: 50px; }
+        .timer-box span { display: block; font-size: 1.5rem; font-weight: 700; color: var(--primary-color); }
+        .timer-box small { font-size: 0.7rem; text-transform: uppercase; color: #b0b0c0; font-weight: 500; }
+        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; text-align: center; margin-top: 20px; }
+        .stat-item { background: rgba(0,0,0,0.25); border-radius: 12px; padding: 15px 10px; border: 1px solid rgba(0,0,0,0.1); }
+        .stat-item i { font-size: 2.2rem; display: block; margin-bottom: 5px; color: var(--primary-color); }
+        .stat-item h3 { margin: 0; font-size: 1.3rem; color: white; font-weight: 700; }
+        .stat-item p { margin: 5px 0 0 0; font-size: 0.8rem; color: #b0b0c0; font-weight: 500; text-transform: uppercase; }
+        .user-panel h2 { color: var(--primary-color); border-bottom: 1px solid var(--border-color); padding-bottom: 10px; font-weight: 700; }
+        .user-stat { display: flex; align-items: center; margin-bottom: 15px; font-size: 1.1rem; }
+        .user-stat i { font-size: 1.5rem; margin-right: 12px; color: var(--primary-color); }
+        .user-stat span { color: #b0b0c0; } .user-stat strong { color: white; font-weight: 700; margin-left: auto; }
+        #wallet-address-input { width: calc(100% - 24px); background: rgba(0,0,0,0.3); border: 1px solid var(--border-color); color: var(--text-color); padding: 14px 12px; border-radius: 8px; margin-bottom: 15px; font-size: 1rem; font-family: 'Chakra Petch', sans-serif; box-sizing: border-box; transition: all 0.3s ease; }
+        #wallet-address-input::placeholder { color: #777; } #wallet-address-input:focus { outline: none; border-color: var(--primary-color); box-shadow: 0 0 15px var(--shadow-color); }
+        #wallet-input-area { margin-top: 15px; }
+        .btn { display: block; width: 100%; padding: 15px; border: none; border-radius: 8px; font-size: 1.1rem; font-weight: 700; cursor: pointer; text-align: center; text-decoration: none; font-family: 'Chakra Petch', sans-serif; text-transform: uppercase; position: relative; overflow: hidden; transition: all 0.2s ease; }
+        .btn-primary { background: linear-gradient(90deg, var(--primary-color), var(--secondary-color)); color: #0a0a1a; box-shadow: 0 0 20px var(--shadow-color); }
+        .btn-primary::before { content: ''; position: absolute; top: 0; left: -100%; width: 75%; height: 100%; background: linear-gradient(120deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.4) 50%, rgba(255,255,255,0) 100%); transform: skewX(-25deg); transition: left 0.7s ease-in-out; will-change: left; }
+        .btn-primary:hover::before { left: 150%; } .btn-primary:active { transform: scale(0.98); box-shadow: 0 0 10px var(--shadow-color); }
+        .btn-primary:disabled { background: #555; color: #999; cursor: not-allowed; box-shadow: none; }
+        .btn-primary:disabled::before { display: none; }
+        .btn-secondary { background-color: transparent; border: 2px solid var(--primary-color); color: var(--primary-color); margin-top: 15px; }
+        .btn-secondary:hover { background-color: var(--shadow-color); }
+        .referral-panel i { font-size: 1.5rem; margin-right: 12px; color: var(--primary-color); }
+        .referral-box { background: rgba(0, 0, 0, 0.3); padding: 15px; border-radius: 8px; border: 1px dashed var(--border-color); text-align: center; }
+        .referral-box input { width: calc(100% - 22px); background: #222; border: 1px solid #444; color: var(--text-color); padding: 10px; border-radius: 5px; margin-bottom: 10px; font-family: 'Chakra Petch', sans-serif; }
+        .referral-box input:focus { outline: none; border-color: var(--primary-color); }
+        .toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background-color: #28a745; color: white; padding: 12px 20px; border-radius: 8px; z-index: 1000; font-size: 1rem; font-weight: 600; box-shadow: 0 4px 15px rgba(40, 167, 69, 0.5); display: none; animation: fadeInOut 3s ease-in-out; }
+        @keyframes fadeInOut { 0% { opacity: 0; top: 0; } 20% { opacity: 1; top: 20px; } 80% { opacity: 1; top: 20px; } 100% { opacity: 0; top: 0; } }
+
+        /* =============================================
+        NEW: ADMIN PANEL CSS
+        =============================================
+        */
+        #admin-panel-section {
+            font-family: Arial, sans-serif;
+            background: #222;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid var(--primary-color);
+            margin-top: 30px;
+        }
+        #admin-panel-section h1, #admin-panel-section h2 { color: #39FF14; border-bottom: 1px solid #39FF14; padding-bottom: 5px; }
+        #admin-panel-section .form-group { margin-bottom: 15px; }
+        #admin-panel-section .form-group label { display: block; margin-bottom: 5px; font-weight: bold; }
+        #admin-panel-section .form-group input { width: calc(100% - 20px); padding: 8px 10px; background: #333; color: #fff; border: 1px solid #555; border-radius: 4px; }
+        #admin-panel-section button { background: #39FF14; color: #000; border: none; padding: 12px 20px; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 1rem; }
+        #admin-panel-section button:hover { background: #2aff00; }
+        #admin-panel-section button.danger { background: #ff4444; color: #fff; }
+        #admin-panel-section button:disabled { background: #555; }
+        #user-list { max-height: 400px; overflow-y: auto; border: 1px solid #444; padding: 10px; background: #1a1a1a; border-radius: 4px; }
+        .user-item { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #333; }
+        .user-item span { font-size: 0.9rem; margin-right: 10px; }
+    </style>
+</head>
+<body>
+
+    <div class="bg-animation"></div>
+
+    <div class="App">
+        <div id="toast-notification" class="toast"></div>
+
+        <div id="main-app">
+            <div class="card header-card">
+                <img src="https://i.ibb.co/6r11Yps/crypto-logo-placeholder.png" alt="Project Logo" id="project-logo" />
+                <h1 id="project-name">Loading...</h1>
+                <p>Welcome, <strong id="telegram-username">@user</strong>! Claim your free tokens and invite friends.</p>
+                <h3>Airdrop Ends In:</h3>
+                <div class="countdown-timer">
+                    <div class="timer-box"><span id="timer-days">00</span><small>Days</small></div>
+                    <div class="timer-box"><span id="timer-hours">00</span><small>Hours</small></div>
+                    <div class="timer-box"><span id="timer-mins">00</span><small>Mins</small></div>
+                    <div class="timer-box"><span id="timer-secs">00</span><small>Secs</small></div>
+                </div>
+            </div>
+            <div class="card stats-card">
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <i class='bx bxs-coin-stack'></i>
+                        <h3 id="stats-total-pool">...</h3>
+                        <p>Total Airdrop Pool</p>
+                    </div>
+                    <div class="stat-item">
+                        <i class='bx bxs-group'></i>
+                        <h3 id="stats-total-participants">...</h3>
+                        <p>Total Participants</p>
+                    </div>
+                </div>
+            </div>
+            <div class="card user-panel">
+                <h2>Your Dashboard</h2>
+                <div class="user-stat">
+                    <i class='bx bxs-wallet'></i>
+                    <span>Your Balance:</span>
+                    <strong id="user-balance">0 XYZ</strong>
+                </div>
+                <div class="user-stat">
+                    <i class='bx bxs-check-shield'></i>
+                    <span>Wallet:</span>
+                    <strong id="user-wallet">Not Connected</strong>
+                </div>
+                <div id="wallet-input-area">
+                    <input type="text" id="wallet-address-input" placeholder="Enter your BEP-20 Address">
+                    <button id="save-wallet-btn" class="btn btn-primary">Save Wallet</button>
+                </div>
+                <button id="claim-btn" class="btn btn-primary" style="display: none;">🎉 Claim Tokens Now</button>
+            </div>
+            <div class="card referral-panel">
+                <h2>Referral System</h2>
+                <div class="user-stat">
+                    <i class='bx bxs-user-plus'></i>
+                    <span>Friends Invited:</span>
+                    <strong id="referral-count">0</strong>
+                </div>
+                <div class="user-stat">
+                    <i class='bx bxs-gift'></i>
+                    <span>Referral Earnings:</span>
+                    <strong id="referral-earnings">0 XYZ</strong>
+                </div>
+                <div class="referral-box">
+                    <p>Your unique referral link:</p>
+                    <input type="text" id="referral-link" value="Loading..." readOnly />
+                </div>
+            </div>
+            <div class="card info-panel">
+                <h2>Project Info</h2>
+                <p><strong>Token Symbol:</strong> <span id="project-symbol-info">XYZ</span></p>
+                <p><strong>Estimated Listing Price:</strong> $0.10</p>
+                <p><strong>Exchanges:</strong> MEXC, KuCoin (Coming Soon)</p>
+                <a href="#" class="btn btn-secondary">
+                    <i class='bx bxs-file-pdf' style="vertical-align: middle; margin-right: 5px;"></i>
+                    View Whitepaper
+                </a>
+            </div>
+        </div>
+        <div id="admin-panel-section" style="display:none;">
+            <div class="container">
+                <h1>🚀 Airdrop Admin Panel</h1>
+                
+                <h2>Global Stats</h2>
+                <p><strong>Total Users:</strong> <span id="admin-total-users">...</span></p>
+        
+                <h2>⚙️ App Configuration</h2>
+                <div class="form-group">
+                    <label for="admin-coin-name">Coin Name (e.g., Project XYZ)</label>
+                    <input type="text" id="admin-coin-name">
+                </div>
+                <div class="form-group">
+                    <label for="admin-coin-symbol">Coin Symbol (e.g., XYZ)</label>
+                    <input type="text" id="admin-coin-symbol">
+                </div>
+                <div class="form-group">
+                    <label for="admin-coin-logo">Coin Logo URL</label>
+                    <input type="text" id="admin-coin-logo">
+                </div>
+                <div class="form-group">
+                    <label for="admin-end-date">End Date (YYYY-MM-DDTHH:MM:SS)</label>
+                    <input type="text" id="admin-end-date">
+                </div>
+                <div class="form-group">
+                    <label for="admin-ref-bonus">Referral Bonus</label>
+                    <input type="number" id="admin-ref-bonus">
+                </div>
+                <button id="admin-save-config-btn">Save Configuration</button>
+        
+                <hr style="border-color: #333; margin: 20px 0;">
+        
+                <h2>👥 User Management</h2>
+                <div class="form-group">
+                    <label for="admin-search-user">Search User (by Telegram ID)</label>
+                    <input type="text" id="admin-search-user" placeholder="Enter Telegram ID...">
+                </div>
+                <div id="user-list">
+                    </div>
+        
+                <div id="admin-edit-user-section" style="display:none; margin-top: 20px; background: #333; padding: 15px; border-radius: 5px;">
+                    <h3>Edit User: <span id="admin-edit-user-id"></span></h3>
+                    <div class="form-group">
+                        <label for="admin-edit-balance">Add to Balance (e.g., 500)</label>
+                        <input type="number" id="admin-edit-balance" placeholder="0">
+                    </div>
+                    <button id="admin-save-user-btn">Save User Changes</button>
+                    <button id="admin-reset-claim-btn" class="danger">Reset Claim Status</button>
+                </div>
+            </div>
+        </div>
+        </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            
+            // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+            // PASTE YOUR NPOINT.IO URL HERE
+            // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+            const NPOINT_URL = 'https://api.npoint.io/fd0fb447bbe6872ae41b';
+            
+            const ADMIN_TELEGRAM_ID = '6956629522'; // This is your Admin ID
+
+            let APP_CONFIG = {};
+            let currentUser = {};
+            let masterData = {};
+            let selectedUserId = null; // For admin panel
+
+            const elements = {
+                // Main App
+                projectName: document.getElementById('project-name'),
+                projectLogo: document.getElementById('project-logo'),
+                projectSymbolInfo: document.getElementById('project-symbol-info'),
+                username: document.getElementById('telegram-username'),
+                totalPool: document.getElementById('stats-total-pool'),
+                participants: document.getElementById('stats-total-participants'),
+                userBalance: document.getElementById('user-balance'),
+                userWallet: document.getElementById('user-wallet'),
+                walletInputArea: document.getElementById('wallet-input-area'),
+                walletInput: document.getElementById('wallet-address-input'),
+                saveWalletBtn: document.getElementById('save-wallet-btn'),
+                claimBtn: document.getElementById('claim-btn'),
+                referralLink: document.getElementById('referral-link'),
+                referralCount: document.getElementById('referral-count'),
+                referralEarnings: document.getElementById('referral-earnings'),
+                toast: document.getElementById('toast-notification'),
+                timerDays: document.getElementById('timer-days'),
+                timerHours: document.getElementById('timer-hours'),
+                timerMins: document.getElementById('timer-mins'),
+                timerSecs: document.getElementById('timer-secs'),
+                
+                // Admin Panel
+                adminPanelSection: document.getElementById('admin-panel-section'),
+                adminTotalUsers: document.getElementById('admin-total-users'),
+                adminCoinName: document.getElementById('admin-coin-name'),
+                adminCoinSymbol: document.getElementById('admin-coin-symbol'),
+                adminCoinLogo: document.getElementById('admin-coin-logo'),
+                adminEndDate: document.getElementById('admin-end-date'),
+                adminRefBonus: document.getElementById('admin-ref-bonus'),
+                adminSaveConfigBtn: document.getElementById('admin-save-config-btn'),
+                adminUserList: document.getElementById('user-list'),
+                adminSearchUser: document.getElementById('admin-search-user'),
+                adminEditUserSection: document.getElementById('admin-edit-user-section'),
+                adminEditUserId: document.getElementById('admin-edit-user-id'),
+                adminEditBalance: document.getElementById('admin-edit-balance'),
+                adminSaveUserBtn: document.getElementById('admin-save-user-btn'),
+                adminResetClaimBtn: document.getElementById('admin-reset-claim-btn')
+            };
+            
+            // --- Utility Functions ---
+            function showToast(message, isError = false) {
+                elements.toast.textContent = message;
+                elements.toast.style.backgroundColor = isError ? '#dc3545' : '#28a745';
+                elements.toast.style.display = 'block';
+                setTimeout(() => { elements.toast.style.display = 'none'; }, 3000);
+            }
+
+            function isValidWalletAddress(address) {
+                return /^0x[a-fA-F0-9]{40}$/.test(address);
+            }
+            
+            function generateReferralCode() {
+                return 'ref' + Date.now().toString(36) + Math.random().toString(36).substring(2, 5);
+            }
+            
+            // --- Data Functions (NPOINT) ---
+            async function postData(data, buttonToDisable = null) {
+                if (buttonToDisable) {
+                    buttonToDisable.disabled = true;
+                    buttonToDisable.textContent = 'Saving...';
+                }
+                try {
+                    const response = await fetch(NPOINT_URL, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(data)
+                    });
+                    if (!response.ok) throw new Error('Failed to save data');
+                    return true;
+                } catch (err) {
+                    console.error('Save error:', err);
+                    showToast('Error saving data! Check console.', true);
+                    return false;
+                } finally {
+                     if (buttonToDisable) {
+                        buttonToDisable.disabled = false;
+                        buttonToDisable.textContent = 'Save Configuration'; // Or other text
+                    }
+                }
+            }
+            
+            async function fetchData() {
+                try {
+                    const response = await fetch(NPOINT_URL + '?' + new Date().getTime()); // Cache buster
+                    if (!response.ok) throw new Error('Could not load database');
+                    return await response.json();
+                } catch (err) {
+                    throw err;
+                }
+            }
+
+            // --- Main App Functions ---
+            function updateUI() {
+                if (!currentUser.telegramId) return;
+                
+                elements.projectName.textContent = APP_CONFIG.coinName;
+                elements.projectLogo.src = APP_CONFIG.coinLogoUrl;
+                elements.projectSymbolInfo.textContent = APP_CONFIG.coinSymbol;
+                
+                elements.userBalance.textContent = `${currentUser.balance || 0} ${APP_CONFIG.coinSymbol}`;
+                
+                if (currentUser.walletAddress) {
+                    const addr = currentUser.walletAddress;
+                    elements.userWallet.textContent = `${addr.substring(0, 6)}...${addr.substring(addr.length - 4)}`;
+                    elements.walletInputArea.style.display = 'none'; 
+                    elements.claimBtn.style.display = 'block';      
+                } else {
+                    elements.userWallet.textContent = 'Not Connected';
+                    elements.walletInputArea.style.display = 'block'; 
+                    elements.claimBtn.style.display = 'none';       
+                }
+
+                if (currentUser.hasClaimed) {
+                    elements.claimBtn.textContent = 'Already Claimed';
+                    elements.claimBtn.disabled = true;
+                } else {
+                    elements.claimBtn.textContent = `🎉 Claim Tokens Now`;
+                    elements.claimBtn.disabled = false;
+                }
+                
+                elements.referralLink.value = `https://t.me/YOUR_BOT_NAME?start=${currentUser.referralCode}`; // <-- SET YOUR BOT NAME
+                elements.referralCount.textContent = currentUser.referrals || 0; 
+                elements.referralEarnings.textContent = `${(currentUser.referrals || 0) * APP_CONFIG.referralBonus} ${APP_CONFIG.coinSymbol}`;
+                
+                elements.totalPool.textContent = new Intl.NumberFormat().format(APP_CONFIG.totalTokens);
+                elements.participants.textContent = new Intl.NumberFormat().format(Object.keys(masterData.users).length);
+            }
+            
+            async function saveWallet() {
+                const address = elements.walletInput.value.trim();
+                if (!isValidWalletAddress(address)) return showToast('Invalid BEP-20 Address.', true);
+
+                currentUser.walletAddress = address;
+                masterData.users[currentUser.telegramId].walletAddress = address;
+                
+                const success = await postData(masterData);
+                if (success) {
+                    updateUI();
+                    showToast('Wallet Saved!');
+                }
+            }
+
+            async function handleClaim() {
+                if (!currentUser.walletAddress) return showToast('Please save your wallet first!', true);
+                if (currentUser.hasClaimed) return showToast('You have already claimed!', true);
+                if (new Date() > new Date(APP_CONFIG.endDate)) return showToast('Airdrop has ended!', true);
+
+                elements.claimBtn.disabled = true;
+                elements.claimBtn.textContent = 'Claiming...';
+                
+                const claimAmount = Math.floor(Math.random() * (APP_CONFIG.maxClaim - APP_CONFIG.minClaim + 1)) + APP_CONFIG.minClaim;
+                
+                currentUser.balance += claimAmount;
+                currentUser.hasClaimed = true;
+                masterData.users[currentUser.telegramId].balance = currentUser.balance;
+                masterData.users[currentUser.telegramId].hasClaimed = true;
+                
+                const success = await postData(masterData);
+                
+                if (success) {
+                    updateUI();
+                    showToast(`🎉 You’ve claimed ${claimAmount} ${APP_CONFIG.coinSymbol}!`);
+                } else {
+                    elements.claimBtn.disabled = false;
+                }
+            }
+
+            function startTimer(endDate) {
+                const countdown = setInterval(() => {
+                    const now = new Date().getTime();
+                    const distance = new Date(endDate).getTime() - now;
+                    if (distance < 0) {
+                        clearInterval(countdown);
+                        elements.timerDays.textContent = '00';
+                        elements.timerHours.textContent = '00';
+                        elements.timerMins.textContent = '00';
+                        elements.timerSecs.textContent = '00';
+                        if (elements.claimBtn) {
+                            elements.claimBtn.disabled = true;
+                            elements.claimBtn.textContent = 'Airdrop Ended';
+                        }
+                        return;
+                    }
+                    elements.timerDays.textContent = String(Math.floor(distance / (1000 * 60 * 60 * 24))).padStart(2, '0');
+                    elements.timerHours.textContent = String(Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))).padStart(2, '0');
+                    elements.timerMins.textContent = String(Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60))).padStart(2, '0');
+                    elements.timerSecs.textContent = String(Math.floor((distance % (1000 * 60)) / 1000)).padStart(2, '0');
+                }, 1000);
+            }
+
+            // --- NEW: Admin Panel Functions ---
+            function showAdminPanel() {
+                elements.adminPanelSection.style.display = 'block';
+                
+                // Populate Config
+                const config = masterData.config;
+                elements.adminTotalUsers.textContent = Object.keys(masterData.users).length;
+                elements.adminCoinName.value = config.coinName;
+                elements.adminCoinSymbol.value = config.coinSymbol;
+                elements.adminCoinLogo.value = config.coinLogoUrl;
+                elements.adminEndDate.value = config.endDate;
+                elements.adminRefBonus.value = config.referralBonus;
+
+                renderUserList();
+
+                // Attach Listeners
+                elements.adminSaveConfigBtn.addEventListener('click', saveAdminConfig);
+                elements.adminSaveUserBtn.addEventListener('click', saveAdminUser);
+                elements.adminResetClaimBtn.addEventListener('click', resetAdminUserClaim);
+                elements.adminSearchUser.addEventListener('input', renderUserList);
+            }
+            
+            function renderUserList() {
+                const users = masterData.users;
+                const searchTerm = elements.adminSearchUser.value.toLowerCase();
+                elements.adminUserList.innerHTML = '';
+                
+                Object.keys(users).forEach(userId => {
+                    if (searchTerm && !userId.toLowerCase().includes(searchTerm)) {
+                        return;
+                    }
+                    const user = users[userId];
+                    const item = document.createElement('div');
+                    item.className = 'user-item';
+                    item.innerHTML = `
+                        <span>
+                            <strong>ID:</strong> ${user.telegramId} <br>
+                            <strong>Bal:</strong> ${user.balance} | <strong>Refs:</strong> ${user.referrals} | <strong>Claimed:</strong> ${user.hasClaimed}
+                        </span>
+                        <button data-id="${user.telegramId}">Edit</button>
+                    `;
+                    item.querySelector('button').addEventListener('click', () => {
+                        selectUserForEditing(user.telegramId);
+                    });
+                    elements.adminUserList.appendChild(item);
+                });
+            }
+
+            function selectUserForEditing(userId) {
+                selectedUserId = userId;
+                elements.adminEditUserSection.style.display = 'block';
+                elements.adminEditUserId.textContent = userId;
+                elements.adminEditBalance.value = '0';
+            }
+
+            async function saveAdminConfig() {
+                masterData.config.coinName = elements.adminCoinName.value;
+                masterData.config.coinSymbol = elements.adminCoinSymbol.value;
+                masterData.config.coinLogoUrl = elements.adminCoinLogo.value;
+                masterData.config.endDate = elements.adminEndDate.value;
+                masterData.config.referralBonus = parseInt(elements.adminRefBonus.value);
+                
+                const success = await postData(masterData, elements.adminSaveConfigBtn);
+                if(success) {
+                    showToast('✅ Config Saved! Reloading app...');
+                    location.reload(); // Reload to apply changes
+                }
+            }
+
+            async function saveAdminUser() {
+                if (!selectedUserId) return;
+                
+                const addAmount = parseInt(elements.adminEditBalance.value) || 0;
+                masterData.users[selectedUserId].balance += addAmount;
+                
+                const success = await postData(masterData);
+                if(success) {
+                    showToast('✅ User balance updated!');
+                    elements.adminEditUserSection.style.display = 'none';
+                    selectedUserId = null;
+                    renderUserList(); // Refresh list
+                }
+            }
+            
+            async function resetAdminUserClaim() {
+                if (!selectedUserId) return;
+                
+                masterData.users[selectedUserId].hasClaimed = false;
+                
+                const success = await postData(masterData);
+                if(success) {
+                    showToast('✅ User claim status reset!');
+                    elements.adminEditUserSection.style.display = 'none';
+                    selectedUserId = null;
+                    renderUserList(); // Refresh list
+                }
+            }
+
+            // --- Main Initialization Function ---
+            async function initializeApp() {
+                if (NPOINT_URL === 'https://api.npoint.io/xxxxxxxxxxxxxxxxxxxxxxxx') {
+                    return showToast('ERROR: Please update NPOINT_URL in the script!', true);
+                }
+            
+                let telegramId = null;
+                let referralCode = null; // This is the code of the *referrer*
+
+                const tg = window.Telegram ? window.Telegram.WebApp : null;
+                
+                // This app now ONLY works in Telegram
+                if (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) {
+                    tg.ready();
+                    tg.expand();
+                    telegramId = tg.initDataUnsafe.user.id.toString();
+                    elements.username.textContent = `@${tg.initDataUnsafe.user.username || tg.initDataUnsafe.user.first_name}`;
+                    if (tg.initDataUnsafe.start_param) {
+                        referralCode = tg.initDataUnsafe.start_param;
+                    }
+                } else {
+                    // Not in Telegram
+                    document.body.innerHTML = `<h1 style="color: red; text-align: center; margin-top: 50px;">Error: This app must be launched from Telegram.</h1>`;
+                    return;
+                }
+
+                // --- Connect to the "database" ---
+                try {
+                    masterData = await fetchData();
+                    APP_CONFIG = masterData.config;
+                    
+                    let dataWasModified = false;
+                    
+                    if (masterData.users[telegramId]) {
+                        currentUser = masterData.users[telegramId];
+                    } else {
+                        // --- NEW USER ---
+                        dataWasModified = true;
+                        currentUser = {
+                            telegramId: telegramId,
+                            walletAddress: null,
+                            balance: 0,
+                            referralCode: generateReferralCode(),
+                            referredBy: null,
+                            referrals: 0,
+                            hasClaimed: false
+                        };
+                        
+                        if (referralCode) {
+                            const referrerKey = Object.keys(masterData.users).find(key => masterData.users[key].referralCode === referralCode);
+                            if (referrerKey) {
+                                masterData.users[referrerKey].balance += APP_CONFIG.referralBonus;
+                                masterData.users[referrerKey].referrals += 1;
+                                currentUser.referredBy = masterData.users[referrerKey].telegramId;
+                            }
+                        }
+                        masterData.users[telegramId] = currentUser;
+                    }
+                    
+                    if (dataWasModified) {
+                        showToast('Welcome! Saving your new account...');
+                        const success = await postData(masterData);
+                        if (!success) throw new Error('Could not save new user');
+                        showToast('Account created!');
+                    }
+                    
+                    // --- FINAL CHECKS ---
+                    updateUI();
+                    startTimer(APP_CONFIG.endDate);
+                    
+                    // --- ADMIN CHECK ---
+                    if (telegramId === ADMIN_TELEGRAM_ID) {
+                        showAdminPanel();
+                    }
+
+                    // Attach main app listeners
+                    elements.saveWalletBtn.addEventListener('click', saveWallet);
+                    elements.claimBtn.addEventListener('click', handleClaim);
+
+                } catch (err) {
+                    console.error('Fatal Error:', err);
+                    showToast(err.message || 'Could not connect to server.', true);
+                }
+            }
+
+            initializeApp();
+        });
+    </script>
+</body>
+</html>
